@@ -17,6 +17,19 @@ db = MySQLdb.connect(host=DB.host,
 db.autocommit(True)
 
 
+def bad_num(number):
+    # Checks to make sure a valid US phone number
+    try:
+        number = client.lookups.phone_numbers(number).fetch()
+        country_code = number.country_code
+        if country_code == "US":
+            return False
+        else:
+            return True
+    except:
+        return True
+
+
 def sign_up(phone_number):
     crsr = db.cursor()
     exists = crsr.execute("""select Stop from Users WHERE PhoneNumber = %s LIMIT 1""", (phone_number,))
@@ -29,6 +42,9 @@ def sign_up(phone_number):
         if stop:
             return "stop"
         return "registered"
+
+    if bad_num(phone_number):
+        return "bad"
 
     # Then, send the first message to the customer
     message = """Welcome to DadJokeJunkie, we will get you started right now:
