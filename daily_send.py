@@ -63,7 +63,9 @@ for phone_number in phone_numbers:
             to=phone_number,
             from_=SMS.phone_one,
             body=todays_joke)
+        crsr = db.cursor()
         crsr.callproc('Save_SentText', (phone_number, joke_id))
+        crsr.close()
     except:
         pass
         # Do some stuff here, this would be on a STOP?
