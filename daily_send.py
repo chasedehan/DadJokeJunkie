@@ -56,10 +56,6 @@ crsr.execute("""UPDATE Jokes SET TimesSent = TimesSent + 1 WHERE JokeId = %s""",
 crsr.close()
 
 
-# Step 5) Update the DailyJokes (history table) with the joke of the day
-# Do this later
-
-
 # Step 6) Loop through user list, sending the joke to each user
 for phone_number in phone_numbers:
     try:
@@ -67,12 +63,17 @@ for phone_number in phone_numbers:
             to=phone_number,
             from_=SMS.phone_one,
             body=todays_joke)
+        crsr.callproc('Save_SentText', (phone_number, joke_id))
     except:
         pass
         # Do some stuff here, this would be on a STOP?
 
 
 # Step 7) If code returns "STOP" (or whatever it is), update Users table with Stop=1
+
+
+# Step 5) Update the DailyJokes (history table) with the joke of the day
+# Do this later
 
 
 # Step 8) Done!

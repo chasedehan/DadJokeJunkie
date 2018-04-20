@@ -9,12 +9,26 @@ account_sid = SMS.account_sid
 auth_token = SMS.auth_token
 
 client = Client(account_sid, auth_token)
-db = MySQLdb.connect(host=DB.host,
-                     port=DB.port,
-                     user=DB.user,
-                     passwd=DB.password,
-                     db=DB.db)
-db.autocommit(True)
+
+
+class MyDB:
+  conn = None
+
+  def connect(self):
+    self.conn = MySQLdb.connect(host=DB.host,
+                                port=DB.port,
+                                user=DB.user,
+                                passwd=DB.password,
+                                db=DB.db)
+    self.conn.autocommit(True)
+
+  def cursor(self):
+    try:
+      cursor = self.conn.cursor()
+    except (AttributeError, MySQLdb.OperationalError):
+      self.connect()
+      cursor = self.conn.cursor()
+    return cursor
 
 
 def bad_num(number):
@@ -31,8 +45,10 @@ def bad_num(number):
 
 
 def sign_up(phone_number):
+    db = MyDB()
     crsr = db.cursor()
     exists = crsr.execute("""select Stop from Users WHERE PhoneNumber = %s LIMIT 1""", (phone_number,))
+    # exists = MyDB.execute("""select Stop from Users WHERE PhoneNumber = %s LIMIT 1""", (phone_number,))
     crsr.close()
     if exists:
         crsr = db.cursor()
@@ -66,6 +82,8 @@ def sign_up(phone_number):
                   (PhoneNumber, Stop, CreatedDate)
                   VALUES (%s, 0, %s);""",
                  (phone_number, str(datetime.now())))
+
+    crsr.callproc('Save_SentText', (phone_number, 0))
     crsr.close()
     return "success"
 
