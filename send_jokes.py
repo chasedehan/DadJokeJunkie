@@ -3,6 +3,7 @@
 from twilio.rest import Client
 from datetime import datetime
 import MySQLdb
+import logging
 from config import SMS, DB
 
 account_sid = SMS.account_sid
@@ -37,8 +38,10 @@ def bad_num(number):
         number = client.lookups.phone_numbers(number).fetch()
         country_code = number.country_code
         if country_code == "US":
+            logging.info("US country code")
             return False
         else:
+            logging.info("Non-US country code: {}".format(country_code))
             return True
     except:
         return True
@@ -51,6 +54,7 @@ def sign_up(phone_number):
     # exists = MyDB.execute("""select Stop from Users WHERE PhoneNumber = %s LIMIT 1""", (phone_number,))
     crsr.close()
     if exists:
+        logging.info("User already registered")
         crsr = db.cursor()
         crsr.execute("""select Stop from Users WHERE PhoneNumber = %s""", (phone_number,))
         stop = crsr.fetchall()[0][0]
@@ -74,6 +78,7 @@ def sign_up(phone_number):
             to=phone_number,
             from_=SMS.phone_one,
             body=message)
+        logging.info("Sent welcome joke")
     except:
         return "bad"
 
@@ -82,8 +87,10 @@ def sign_up(phone_number):
                   (PhoneNumber, Stop, CreatedDate)
                   VALUES (%s, 0, %s);""",
                  (phone_number, str(datetime.now())))
-
+    logging.info("User saved to DB")
     crsr.callproc('Save_SentText', (phone_number, 0))
+    logging.info("Text saved to DB")
+
     crsr.close()
     return "success"
 
