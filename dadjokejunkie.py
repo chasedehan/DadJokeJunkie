@@ -1,35 +1,52 @@
+import os
 from flask import Flask, render_template, request
 from send_jokes import sign_up
-from config import Defaults
+from flask_mysqldb import MySQL
+from config import Defaults, DB
 
 # Logging setup
 import logging
-from time import strftime
 
 logging.basicConfig(
-    filename=strftime("dadjokes_%H_%M_%m_%d_%Y.log"),
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%m/%d/%Y %I:%M:%S %p')
+    format='[%(asctime)s] [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S')
 
+# Template routing
+_TEMPLATES_ = {
+    "success": 'thanks.html',
+    "stop": 'stop.html',
+    "registered": 'registered.html',
+    "bad": "bad.html"
+}
+
+# Database setup
 app = Flask(__name__)
+app.config['MYSQL_USER'] = DB.user
+app.config['MYSQL_PASSWORD'] = DB.password
+app.config['MYSQL_DB'] = DB.db
+app.config['MYSQL_UNIX_SOCKET'] = os.path.join('/cloudsql', DB.unix_socket)
+
+# Check if on the App engine
+#if os.getenv('SERVER_SOFTWARE', '').startswith('Google App Engine/'):
+#    app.config['MYSQL_UNIX_SOCKET'] = os.path.join('/cloudsql', DB.unix_socket)
+#else:
+#    app.config['MYSQL_HOST'] = DB.host
+
+mysql = MySQL(app)
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
+        logging.info("App start - os env: {}".format(os.getenv('SERVER_SOFTWARE', '')))
         logging.info("New signup, phone: {}".format(request.form['phone_number']))
-        status = sign_up(request.form['phone_number'])
+        status = sign_up(request.form['phone_number'], mysql)
         logging.info("Signup status: {}".format(status))
-        if status == "success":
-            return render_template('thanks.html')
-        elif status == "stop":
-            return render_template('stop.html')
-        elif status == "registered":
-            return render_template('registered.html')
-        elif status == "bad":
-            return render_template('bad.html')
 
+        return render_template(_TEMPLATES_[status])
+
+    # Get returns the index
     return render_template('index.html')
 
 

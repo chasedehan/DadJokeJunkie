@@ -26,6 +26,8 @@ auth_token = SMS.auth_token
 
 
 client = Client(account_sid, auth_token)
+
+# TODO - fix all this DB stuff to work with flask
 db = MySQLdb.connect(host=DB.host,
                      port=DB.port,
                      user=DB.user,
